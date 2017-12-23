@@ -1,0 +1,2 @@
+# CCArbitrage
+Automated cryptocurrency arbitrage
