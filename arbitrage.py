@@ -8,9 +8,12 @@
 # raise warning
 import ccxt
 import schedule, time
+from slackclient import SlackClient
+slack_token = "xoxp-290250904146-290174012755-291183230357-22369a6ca072f660db04e46cac0720da"
 
 def job():
 ##symbols = ['BCH/USD', 'ETH/USD', 'LTC/USD', 'DASH/USD']
+    sc = SlackClient(slack_token)
     symbols = ['BCH/USD', 'LTC/USD', 'ETH/USD']
     pairs = [(r,s) for s in symbols for r in symbols if r is not s]
     gdax = ccxt.gdax({'password':'', 'apiKey':'', 'secret':''})
@@ -26,20 +29,24 @@ def job():
         # TODO check if exchange supports symbol
         rPrice=x.fetch_ticker(r)
         sPrice=x.fetch_ticker(s)
-        print x.name, rPrice['ask'], rPrice['bid']
-        print x.name, sPrice['bid'], sPrice['ask']
+        #print x.name, rPrice['ask'], rPrice['bid']
+        #print x.name, sPrice['bid'], sPrice['ask']
         asks[x.name] = rPrice['ask']/rPrice['bid']
         bids[x.name] = sPrice['bid']/sPrice['ask']
       lowX = min(asks, key=asks.get)
       highX = max(bids, key=bids.get)
       print r,s, bids[highX]/asks[lowX]
       if (bids[highX]/asks[lowX]) > 1.005:
+        sc.api_call(
+            "chat.postMessage",
+            channel="#alarms",
+            text="Opportunity found:\n Short %s on %s, Long %s on %s" % (s, highX, r, lowX))
         print "CONGRATS you found an opportunity"
         print "Short %s on %s, Long %s on %s" % (s, highX, r, lowX)
       time.sleep(1)
 
 if __name__ == '__main__':
-    #schedule.every(1).minutes.do(job)
+    schedule.every(1).minutes.do(job)
     while 1:
-        job()
+        schedule.run_pending()
         time.sleep(30)
