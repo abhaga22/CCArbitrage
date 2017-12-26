@@ -5,7 +5,7 @@ LATEST = 'latest'
 DEFAULT_BASE = 'USD'
 
 
-def get_rates(date=LATEST, base=DEFAULT_BASE, symbols=None):
+def get_rates(date: str=LATEST, base: str=DEFAULT_BASE, symbols: str=None) -> dict:
     try:
         url = BASE_URL + date
         if symbols is None:
@@ -16,46 +16,39 @@ def get_rates(date=LATEST, base=DEFAULT_BASE, symbols=None):
         json_data = response.json()
         return json_data['rates']
     except Exception:
-        raise Exception(""" \nCheck your input and try again
-        date: 
+        raise Exception("""
+        Check your input and try again
+        
+        date: OPTIONAL type str
             a date form January 4th 1999 to today in the format 'yyyy-mm-dd'
+            or 'latest'. If omitted, 'latest' is used. 
 
-        base:
-            a 3 letter currency code like 'USD'
+        base: OPTIONAL type str
+            a 3 letter currency code such as 'EUR'. If omitted, 'USD' is used.
 
-        symbols
-            a string of comma separated currency codes like 'USD,JPY,EUR'
+        symbols: OPTIONAL type str
+            a string of comma separated currency codes like 'USD,JPY,EUR'. If
+            omitted, all rates are returned for the corresponding base and date.
         """)
 
 
-def convert(amount, base='USD', symbols=None):
+def convert(amount: float, base: str=DEFAULT_BASE, dest: str=None) -> float:
     """ Converts an amount from the base currency to the symbols currency """
     try:
-        conversion_rate = get_rates(date=LATEST, base=base, symbols=symbols)
-        return amount * conversion_rate[symbols]
+        if base == dest:
+            return amount
+        conversion_rate = get_rates(date=LATEST, base=base, symbols=dest)
+        return float(amount) * conversion_rate[dest]
     except Exception:
-        raise Exception("""\nCheck your input and try again
-        date: 
-            a date form January 4th 1999 to today in the format 'yyyy-mm-dd'
+        raise Exception("""
+        Check your input and try again
+        
+        amount: REQUIRED type int or str
+            an integer amount of the base currency to convert.
 
-        base:
-            a 3 letter currency code like 'USD'
+        base: OPTIONAL type str
+            a 3 letter currency code such as 'EUR'. If omitted, 'USD' is used.
 
-        symbols
-            a 3 letter currency code like 'JPY'
+        symbols: REQUIRED type str
+            a 3 letter currency code such as 'JPY'.
         """)
-
-
-def main():
-    """ Usage examples """
-    response = convert(10, base='USD', symbols='EUR')
-    print(response, end='\n\n')
-    response = get_rates(symbols='JPY')
-    print(response, end='\n\n')
-    response = get_rates(base='EUR', symbols=None)
-    print(response, end='\n\n')
-    response = get_rates(date='latest', base='USD', symbols='EUR,JPY')
-    print(response, end='\n\n')
-
-
-if __name__ == '__main__': main()
