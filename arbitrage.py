@@ -10,11 +10,18 @@ import ccxt
 import schedule, time
 from slackclient import SlackClient
 slack_token = "xoxp-290250904146-290174012755-291183230357-22369a6ca072f660db04e46cac0720da"
-
 def job():
-##symbols = ['BCH/USD', 'ETH/USD', 'LTC/USD', 'DASH/USD']
+    ##symbols = ['BCH/USD', 'ETH/USD', 'LTC/USD', 'DASH/USD']
     sc = SlackClient(slack_token)
-    symbols = ['BCH/USD', 'LTC/USD', 'ETH/USD']
+    global t
+    t+=1
+#    print t
+    if (t%30 == 0) :
+        sc.api_call(
+            "chat.postMessage",
+            channel="#alarms",
+            text="Keepalive every 30 minutes")
+    symbols = ['BCH/USD', 'LTC/USD']
     pairs = [(r,s) for s in symbols for r in symbols if r is not s]
     gdax = ccxt.gdax({'password':'', 'apiKey':'', 'secret':''})
     gdax.load_markets()
@@ -47,6 +54,8 @@ def job():
 
 if __name__ == '__main__':
     schedule.every(1).minutes.do(job)
+    t=0
     while 1:
+#        job()
         schedule.run_pending()
-        time.sleep(30)
+        time.sleep(10)
