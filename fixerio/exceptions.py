@@ -4,7 +4,11 @@ class FixerioException(Exception):
         Exception.__init__(self,*args,**kwargs)
 
 class FixerioCurrencyUnavailable(FixerioException):
-    """ Wrong or unavailable base currency """
+    """ Wrong or unavailable currency """
+    pass
+
+class FixerioInvalidCurrency(FixerioException):
+    """ Invalid currency """
     pass
 
 class FixerioInvalidDate(FixerioException):
