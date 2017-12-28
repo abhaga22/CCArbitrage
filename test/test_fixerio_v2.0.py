@@ -1,9 +1,10 @@
 from fixerio import fixerio
 
+
 def main():
     test = fixerio.Fixerio()
     response = test.convert(20, base='USD', dest='EUR')
-    print(response)
+    print(response, end='\n\n')
     response = test.get_rates(date='2010-12-31')
     print(response, end='\n\n')
     # print(test._cache)

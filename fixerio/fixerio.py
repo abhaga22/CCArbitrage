@@ -5,7 +5,7 @@ The independent functions fetch data every time from the API but the methods on 
 objects use caching to avoid having to wait for API queries.
 
 get_rates(date: str = LATEST, base: str = DEFAULT_BASE, symbols: str = None) -> dict:
-convert(amount: float, dest: str = None, base: str = DEFAULT_BASE, date: str = LATEST) -> float:
+convert(amount: float, dest: str, base: str = DEFAULT_BASE, date: str = LATEST) -> float:
 """
 
 from datetime import date as dtdate
@@ -132,12 +132,12 @@ def get_rates(date: str = LATEST, base: str = DEFAULT_BASE, symbols: str = None)
         """)
 
 
-def convert(amount: float, base: str = DEFAULT_BASE, dest: str = None) -> float:
+def convert(amount: float, dest: str, base: str = DEFAULT_BASE, date=LATEST) -> float:
     """ Converts an amount from the base currency to the dest currency (no caching) """
     try:
         if base == dest:
             return amount
-        conversion_rate = get_rates(date=LATEST, base=base, symbols=dest)
+        conversion_rate = get_rates(date=date, base=base, symbols=dest)
         return float(amount) * conversion_rate[dest]
     except Exception:
         raise Exception("""
