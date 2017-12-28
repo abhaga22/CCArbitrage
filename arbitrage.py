@@ -20,29 +20,29 @@ def job():
     gdax.load_markets()
     bitfinex = ccxt.bitfinex({'apiKey':'', 'secret':''})
     bitfinex.load_markets()
-    print "Connected to exchanges"
+    print("Connected to exchanges")
     exchanges = [ gdax, bitfinex ]
     for r, s in pairs:
-      print "Fetching values"
+      print("Fetching values")
       asks, bids={},{}
       for x in exchanges:
         # TODO check if exchange supports symbol
         rPrice=x.fetch_ticker(r)
         sPrice=x.fetch_ticker(s)
-        #print x.name, rPrice['ask'], rPrice['bid']
-        #print x.name, sPrice['bid'], sPrice['ask']
+        print(x.name, rPrice['ask'], rPrice['bid'])
+        print(x.name, sPrice['bid'], sPrice['ask'])
         asks[x.name] = rPrice['ask']/rPrice['bid']
         bids[x.name] = sPrice['bid']/sPrice['ask']
       lowX = min(asks, key=asks.get)
       highX = max(bids, key=bids.get)
-      print r,s, bids[highX]/asks[lowX]
+      print(r,s, bids[highX]/asks[lowX])
       if (bids[highX]/asks[lowX]) > 1.005:
         sc.api_call(
             "chat.postMessage",
             channel="#alarms",
             text="Opportunity found:\n Short %s on %s, Long %s on %s" % (s, highX, r, lowX))
-        print "CONGRATS you found an opportunity"
-        print "Short %s on %s, Long %s on %s" % (s, highX, r, lowX)
+        print("CONGRATS you found an opportunity")
+        print("Short %s on %s, Long %s on %s" % (s, highX, r, lowX))
       time.sleep(1)
 
 if __name__ == '__main__':
