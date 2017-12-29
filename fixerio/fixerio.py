@@ -49,9 +49,9 @@ def _date(date=None):
     """ Returns the date fixer.io was last updated """
     if (date == LATEST) or (date is None):
         if datetime.utcnow().time().hour < UPDATE_TIME_UTC:
-            return str(dtdate.today() - timedelta(1))
+            return str(datetime.utcnow().date() - timedelta(1))
         else:
-            return str(dtdate.today())
+            return str(datetime.utcnow().date())
     else:
         return date
 
@@ -63,7 +63,7 @@ def _valid_date(date=LATEST):
             return True
         else:
             date = _format_date(date)
-            if (date <= dtdate.today()) and (date >= MIN_DATE):
+            if (date <= datetime.utcnow().date()) and (date >= MIN_DATE):
                 return True
             else:
                 return False
