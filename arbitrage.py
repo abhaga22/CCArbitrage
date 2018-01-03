@@ -19,23 +19,24 @@ def job():
     global t
     t+=1
 #    print t
-    if (t%15 == 0) :
-        sc.api_call(
-            "chat.postMessage",
-            channel="#alarms",
-            text="Keepalive every 15 minutes")
-    symbols = ['BTC', 'LTC', 'BCH', 'ETH']
+    #if (t%15 == 0) :
+    #    sc.api_call(
+    #        "chat.postMessage",
+    #        channel="#alarms",
+    #        text="Keepalive every 15 minutes")
+    symbols = ['LTC', 'BCH', 'ETH', 'DASH']
     pairs = [(r,s) for s in symbols for r in symbols if r is not s]
     gdax = ccxt.gdax({'password':'', 'apiKey':'', 'secret':''})
     bitfinex = ccxt.bitfinex({'apiKey':'', 'secret':''})
     poloniex = ccxt.poloniex()
+    bittrex = ccxt.bittrex()
     exmo = ccxt.exmo()
     print("Connected to exchanges")
-    exchanges = [ gdax, bitfinex, poloniex, exmo ]
+    exchanges = [ gdax, bitfinex ]
     for r, s in pairs:
       print("Fetching values")
-      findEngine(r, s, exchanges, sc)
-      time.sleep(5)
+      findEngine(r, s, exchanges, sc, True)
+      time.sleep(15)
 
 def findProfit( crypto1, crypto2, exchanges):
     # There are different ways to find an opportunity, One way to classify it is on what you are pegging it against
@@ -58,41 +59,56 @@ def findEngine(crypto1, crypto2, exchanges, sc, extended = False):
         if pair in market.keys():
             price = x.fetch_ticker(pair)
             print(pair, price['ask'], price['bid'])
-            asks[x.name] = { 'price' : price['ask'], 'symbol': pair}
-            bids[x.name] = { 'price' : price['bid'], 'symbol': pair}
+            asks[x.name] = { 'price' : price['ask'], 'symbol': (pair)}
+            bids[x.name] = { 'price' : price['bid'], 'symbol': (pair)}
         ## End of simple engine. A bot with only this would run faster
         if extended:
-          for peg in ['/BTC', '/USD']:
+          for peg in ['/USD']:
               s1=crypto1+peg
               s2=crypto2+peg
               if  not set([s1,s2]).issubset(set(market.keys())):
-                  print("%s or %s not in exchange %s", s1, s2, x.name)
+                  print("%s or %s not in %s"% (s1, s2, x.name))
                   continue
               price1, price2 = x.fetch_ticker(s1), x.fetch_ticker(s2)
-              print(x.name, price1['ask'], price1['bid'])
-              print(x.name, price2['ask'], price2['bid'])
+              #print(x.name, s1, price1['ask'], price1['bid'])
+              #print(x.name, s2, price2['ask'], price2['bid'])
               price=price1['bid']/price2['ask']
-              if bids.get(x.name) and bids.get(xname).get('price') < price:
+              bid=price
+              if bids.get(x.name) and bids.get(x.name).get('price') < price:
+                  bids[x.name]={ 'price' : price, 'symbol': (s1, s2)}
+              else:
                   bids[x.name]={ 'price' : price, 'symbol': (s1, s2)}
               price=price1['ask']/price2['bid']
-              if asks.get(x.name) and asks.get(xname).get('price') > price:
+              print(x.name, s1, "/", s2, "{:02.5f}".format(bid), "{:02.5f}".format(price))
+              if asks.get(x.name) and asks.get(x.name).get('price') > price:
+                  asks[x.name]={ 'price' : price, 'symbol': (s1, s2)}
+              else:
                   asks[x.name]={ 'price' : price, 'symbol': (s1, s2)}
       if len(asks)*len(bids)==0:
           return
+      print("RESULTS:")
       askX, askPrice , askSymbol = getMin(asks) #this may not behave as expected. If so we need to create a function
       bidX, bidPrice, bidSymbol = getMax(bids)
-      print(askSymbol,bidSymbol, askPrice, bidPrice, bidPrice/askPrice)
-      if (bidPrice/askPrice)>1.005:
+      print(askSymbol,bidSymbol,"{:02.5f}".format(askPrice),
+            "{:02.5f}".format(bidPrice), "{:02.5f}".format(bidPrice/askPrice))
+      #TODO incorporate logic for fees
+      if (bidPrice/askPrice)>1.01:
         gains=(bidPrice/askPrice-1)
-        text="TEST:Opportunity found for {:.1%} gains:\n".format(gains)
-        text2="Short %s on %s for %s \n" %( bidSymbol, bidX, bidPrice)
-        text3="Long %s on %s for %s \n" %( askSymbol, askX, askPrice)
-        #sc.api_call(
-        #    "chat.postMessage",
-        #    channel="#alarms",
-        #    text=text+text2+text3)
+        text="Opportunity found for {:.1%} gains:\n".format(gains)
+        text+="Sell %s on %s " %( bidSymbol[0], bidX)
+        if len(bidSymbol)>1:
+            text+= ",Buy %s on %s " %( bidSymbol[1], bidX)
+        text+="for {:02.5f} \n".format(bidPrice)
+        text+="Buy %s on %s " %( askSymbol[0], askX)
+        if len(askSymbol)>1:
+            text+= ",Sell %s on %s " %( askSymbol[1], askX)
+        text+="for {:02.5f} \n".format(askPrice)
+        sc.api_call(
+            "chat.postMessage",
+            channel="#alarms",
+            text=text)
         print("CONGRATS you found an opportunity")
-        print(text+text2+text3)
+        print(text)
 
 def getMin( asks ):
     m=math.inf
