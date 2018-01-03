@@ -9,7 +9,7 @@
 #import ccxt.async as ccxt
 #TODO implement async requests
 
-import ccxt
+import ccxt, sys
 import schedule, time, math, json
 from slackclient import SlackClient
 slack_token = "xoxp-290250904146-290174012755-291183230357-22369a6ca072f660db04e46cac0720da"
@@ -54,6 +54,9 @@ def findProfit( crypto1, crypto2, exchanges):
 
 def findEngine(crypto1, crypto2, exchanges, sc, extended = False):
       asks, bids ={},{}
+      name={}
+      for x in exchanges:
+        name[x.name]=x
       for x in exchanges:
         market = x.load_markets()
         #TODO perform a single fetch per exchange
@@ -114,7 +117,7 @@ def findEngine(crypto1, crypto2, exchanges, sc, extended = False):
         #    text=text)
         print("CONGRATS you found an opportunity")
         print(text)
-        execute(askX, bidX, askSymbol[0], askSymbol[2])
+        execute(name[askX], name[bidX], askSymbol[0], askSymbol[1])
 
 def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     #0 get balance
@@ -131,32 +134,34 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     price['bid'] = max(price['ask']-0.01, price['bid'])
     print(askX.name,s1,'limit','buy',amount[s1],"{:02.2f}".format(price['bid']))
     usd=amount[s1]*float(price['bid'])
-    #askX.create_order(s1,'limit','buy', amount[s1],
-    #           "{:02.2f}".format(price['bid']))
+    askX.create_order(s1,'limit','buy', amount[s1],
+               "{:02.2f}".format(price['bid']))
     price=bidX.fetch_ticker(s1)
     price['ask'] = min(price['bid']+0.01, price['ask'])
     print(bidX.name, s1, 'limit', 'sell', amount[s1], "{:02.2f}".format(price['ask']))
-    #bidX.create_order(s1,'limit','sell', amount[s1],
-    #           "{:02.2f}".format(price['ask']))
+    bidX.create_order(s1,'limit','sell', amount[s1],
+               "{:02.2f}".format(price['ask']))
     price=bidX.fetch_ticker(s2)
     price['bid'] = max(price['ask']-0.01, price['bid'])
     amount[s2]=usd/float(price['bid'])
     print(bidX.name,s2, 'limit', 'buy',
       "{:02.5f}".format(amount[s2]),
       "{:02.2f}".format(price['bid']))
-    #bidX.create_order(s2,'limit','buy', amount[s2],
-    #           "{:02.2f}".format(price['bid']))
+    bidX.create_order(s2,'limit','buy', amount[s2],
+               "{:02.2f}".format(price['bid']))
     price=askX.fetch_ticker(s2)
     price['ask'] = min(price['bid']+0.01, price['ask'])
     print(askX.name, s2, 'limit', 'sell',
       "{:02.5f}".format(amount[s2]),
       "{:02.2f}".format(price['ask']))
-    #askX.create_order(s2,'limit','sell', amount[s2],
-    #           "{:02.2f}".format(price['ask']))
+    askX.create_order(s2,'limit','sell', amount[s2],
+               "{:02.2f}".format(price['ask']))
+    time.sleep(10)
     afterX1=askX.fetch_balance()
     afterX2=bidX.fetch_balance()
     print("Before: ",beforeX1['total'], beforeX2['total'])
     print("After:  ",afterX1['total'], afterX2['total'])
+    sys.exit()
 
 def getMin( asks ):
     m=math.inf
@@ -181,6 +186,8 @@ if __name__ == '__main__':
         args = json.load(f)
     t=0
     while 1:
-        job(args)
+        with open('apiKeys', 'r') as f:job(args)
         #schedule.run_pending()
         time.sleep(60)
+
+
