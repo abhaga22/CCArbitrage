@@ -13,9 +13,9 @@ import ccxt, sys
 import schedule, time, math, json
 from slackclient import SlackClient
 slack_token = "xoxp-290250904146-290174012755-291183230357-22369a6ca072f660db04e46cac0720da"
-amount={'BCH/USD':0.005,
+amount={'BCH/USD':0.009,
         'LTC/USD':0.1,
-        'ETH/USD':0.02,
+        'ETH/USD':0.025,
         'DASH/USD':0.02}
 tokens={}
 def job(args={}):
@@ -134,7 +134,7 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     price['bid'] = max(price['ask']-0.01, price['bid'])
     print(askX.name,s1,'limit','buy',amount[s1],"{:02.2f}".format(price['bid']))
     usd=amount[s1]*float(price['bid'])
-    askX.create_order(s1,'limit','buy', amount[s1],
+    askX.create_order(s1,'limit','buy', "{:02.5f}".format(amount[s1]*1.001),
                "{:02.2f}".format(price['bid']))
     price=bidX.fetch_ticker(s1)
     price['ask'] = min(price['bid']+0.01, price['ask'])
@@ -147,20 +147,24 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     print(bidX.name,s2, 'limit', 'buy',
       "{:02.5f}".format(amount[s2]),
       "{:02.2f}".format(price['bid']))
-    bidX.create_order(s2,'limit','buy', amount[s2],
+    bidX.create_order(s2,'limit','buy', "{:02.5f}".format(amount[s2]*1.001),
                "{:02.2f}".format(price['bid']))
     price=askX.fetch_ticker(s2)
     price['ask'] = min(price['bid']+0.01, price['ask'])
     print(askX.name, s2, 'limit', 'sell',
       "{:02.5f}".format(amount[s2]),
       "{:02.2f}".format(price['ask']))
-    askX.create_order(s2,'limit','sell', amount[s2],
+    askX.create_order(s2,'limit','sell', "{:02.5f}".format(amount[s2]),
                "{:02.2f}".format(price['ask']))
     time.sleep(10)
     afterX1=askX.fetch_balance()
     afterX2=bidX.fetch_balance()
+    profit={}
+    for s in ["USD", "BCH", "LTC"]:
+       profit[s]=afterX1['total'][s]+afterX2['total'][s]-beforeX1['total'][s]-beforeX2['total'][s]
     print("Before: ",beforeX1['total'], beforeX2['total'])
     print("After:  ",afterX1['total'], afterX2['total'])
+    print(profit)
     sys.exit()
 
 def getMin( asks ):
@@ -186,7 +190,7 @@ if __name__ == '__main__':
         args = json.load(f)
     t=0
     while 1:
-        with open('apiKeys', 'r') as f:job(args)
+        job(args)
         #schedule.run_pending()
         time.sleep(60)
 
