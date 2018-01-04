@@ -100,7 +100,7 @@ def findEngine(crypto1, crypto2, exchanges, sc, extended = False):
       print(askSymbol,bidSymbol,"{:02.5f}".format(askPrice),
             "{:02.5f}".format(bidPrice), "{:02.5f}".format(bidPrice/askPrice))
       #TODO incorporate logic for fees
-      if (bidPrice/askPrice)>1.005:
+      if (bidPrice/askPrice)>1.01:
         gains=(bidPrice/askPrice-1)
         text="Opportunity found for {:.1%} gains:\n".format(gains)
         text+="Sell %s on %s " %( bidSymbol[0], bidX)
@@ -134,7 +134,7 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     price['bid'] = max(price['ask']-0.01, price['bid'])
     print(askX.name,s1,'limit','buy',amount[s1],"{:02.2f}".format(price['bid']))
     usd=amount[s1]*float(price['bid'])
-    askX.create_order(s1,'limit','buy', "{:02.5f}".format(amount[s1]*1.001),
+    askX.create_order(s1,'limit','buy', "{:02.5f}".format(amount[s1]*1.002),
                "{:02.2f}".format(price['bid']))
     price=bidX.fetch_ticker(s1)
     price['ask'] = min(price['bid']+0.01, price['ask'])
@@ -147,7 +147,7 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
     print(bidX.name,s2, 'limit', 'buy',
       "{:02.5f}".format(amount[s2]),
       "{:02.2f}".format(price['bid']))
-    bidX.create_order(s2,'limit','buy', "{:02.5f}".format(amount[s2]*1.001),
+    bidX.create_order(s2,'limit','buy', "{:02.5f}".format(amount[s2]*1.002),
                "{:02.2f}".format(price['bid']))
     price=askX.fetch_ticker(s2)
     price['ask'] = min(price['bid']+0.01, price['ask'])
@@ -156,12 +156,14 @@ def execute(askX=None, bidX=None, s1='BCH/USD', s2='LTC/USD'):
       "{:02.2f}".format(price['ask']))
     askX.create_order(s2,'limit','sell', "{:02.5f}".format(amount[s2]),
                "{:02.2f}".format(price['ask']))
-    time.sleep(10)
+    #wait for transaction to clear:
+    while(len(askX.fetch_open_orders())+len(bidX.fetch_open_orders())):
+         time.sleep(15)
     afterX1=askX.fetch_balance()
     afterX2=bidX.fetch_balance()
     profit={}
     for s in ["USD", "BCH", "LTC"]:
-       profit[s]=afterX1['total'][s]+afterX2['total'][s]-beforeX1['total'][s]-beforeX2['total'][s]
+       profit[s]="{:02.6f}".format(afterX1['total'][s]+afterX2['total'][s]-beforeX1['total'][s]-beforeX2['total'][s])
     print("Before: ",beforeX1['total'], beforeX2['total'])
     print("After:  ",afterX1['total'], afterX2['total'])
     print(profit)
