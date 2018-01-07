@@ -251,7 +251,7 @@ class Fixerio:
             self._to_cache(json_data)
             return json_data['rates']
 
-    def convert(self, amount, dest, base='USD', date=LATEST):
+    def convert(self, amount, dest, base=DEFAULT_BASE, date=LATEST):
         """ Converts an amount from the base currency to the dest currency
             Fetches from cache if available, otherwise from the API
         amount
